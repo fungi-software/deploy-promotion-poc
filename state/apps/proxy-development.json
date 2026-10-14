@@ -1,8 +1,8 @@
 {
   "app": "proxy-development",
-  "sha": "95c42249e2f44fe5c4e926b7d096252a8bca6637",
-  "status": "pending",
-  "pending_sha": "1002a7e6c7fab68ef4dc7d1221c9ded727da843c",
-  "updated_at": "2026-10-14T20:21:18.132Z",
+  "sha": "1002a7e6c7fab68ef4dc7d1221c9ded727da843c",
+  "status": "succeeded",
+  "pending_sha": null,
+  "updated_at": "2026-10-14T20:21:29.661Z",
   "release_phase": "none"
 }
