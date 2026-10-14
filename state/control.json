@@ -1,0 +1,7 @@
+{
+  "fail_build": [],
+  "fail_promote": [],
+  "e2e_fail": false,
+  "alarms": { "staging": [], "production": [] },
+  "web_dynos": 4
+}
