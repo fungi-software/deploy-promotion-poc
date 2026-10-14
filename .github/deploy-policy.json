@@ -1,0 +1,15 @@
+{
+  "timezone": "America/New_York",
+  "production_window": {
+    "days": ["Mon", "Tue", "Wed", "Thu"],
+    "start_hour": 14,
+    "end_hour": 17,
+    "risk_label_pattern": "-risk$",
+    "risk_start_hour": 16
+  },
+  "min_web_dynos": 3,
+  "freezes": [
+    { "start": "2026-11-25", "end": "2026-11-27", "reason": "Thanksgiving" },
+    { "start": "2026-12-23", "end": "2027-01-02", "reason": "Year-end" }
+  ]
+}

@@ -1,0 +1,36 @@
+# Demo knobs for the stubbed Heroku and Datadog: raise an alarm, fail e2e or a build, drop dynos.
+name: Stub control
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        type: choice
+        options: [raise-alarm, clear-alarms, fail-e2e, pass-e2e, set-web-dynos, fail-build, fail-promote, clear-failures, reset]
+        required: true
+      stage:
+        type: choice
+        options: [staging, production]
+        default: production
+      value:
+        description: Alarm name, dyno count, or app name, depending on the action
+        type: string
+        required: false
+
+permissions: {}
+
+jobs:
+  control:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - run: node scripts/deploy/stub-control.mjs
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          ACTION: ${{ inputs.action }}
+          STAGE: ${{ inputs.stage }}
+          VALUE: ${{ inputs.value }}

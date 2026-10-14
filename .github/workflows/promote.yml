@@ -1,0 +1,89 @@
+name: Promote
+run-name: Promote to ${{ inputs.target }} (${{ inputs.pipeline }})${{ inputs.expedite && ' [expedite]' || '' }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Stage to promote into; the source stage follows from it
+        type: choice
+        options: [staging, production]
+        required: true
+      pipeline:
+        type: choice
+        options: [both, api-pipeline, proxy-pipeline]
+        default: both
+      worker_order:
+        description: Required when the range changes worker/; say which deploys first
+        type: string
+        required: false
+      expedite:
+        description: Skip every blocker (needs a reason)
+        type: boolean
+        default: false
+      expedite_reason:
+        type: string
+        required: false
+
+# One promotion per stage at a time, shared by both pipelines.
+concurrency:
+  group: stage-${{ inputs.target }}
+  cancel-in-progress: false
+
+permissions: {}
+
+jobs:
+  preflight:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      statuses: read
+      pull-requests: read
+    outputs:
+      sha: ${{ steps.check.outputs.sha }}
+      pipelines: ${{ steps.check.outputs.pipelines }}
+      prs: ${{ steps.check.outputs.prs }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - id: check
+        run: node scripts/deploy/preflight.mjs
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          TARGET: ${{ inputs.target }}
+          PIPELINE: ${{ inputs.pipeline }}
+          WORKER_ORDER: ${{ inputs.worker_order }}
+          EXPEDITE: ${{ inputs.expedite }}
+          EXPEDITE_REASON: ${{ inputs.expedite_reason }}
+
+  promote:
+    needs: preflight
+    runs-on: ubuntu-latest
+    # The gate environment holds the Heroku key and the main-only branch policy. Deployments are
+    # recorded per app, on the promoted SHA, by the script; deployment: false skips GitHub's own record.
+    environment:
+      name: ${{ inputs.target }}
+      deployment: false
+    permissions:
+      actions: write # starts verify.yml
+      contents: write # stub Heroku state
+      deployments: write
+      issues: write
+      pull-requests: write
+      statuses: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - run: node scripts/deploy/promote.mjs
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          TARGET: ${{ inputs.target }}
+          SHA: ${{ needs.preflight.outputs.sha }}
+          PIPELINES: ${{ needs.preflight.outputs.pipelines }}
+          PRS: ${{ needs.preflight.outputs.prs }}
+          WATCH_MINUTES: ${{ vars.WATCH_MINUTES }}
+          REQUIRE_SIGNOFF: ${{ vars.REQUIRE_QA_SIGNOFF }}

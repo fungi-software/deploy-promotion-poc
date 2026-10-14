@@ -1,0 +1,101 @@
+# Verification of one deployment, started by promote.yml after ps:wait. Its result is a
+# verified/<stage> commit status per pipeline, which the next stage's preflight reads.
+name: Verify
+run-name: Verify ${{ inputs.stage }} ${{ inputs.sha }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      stage:
+        type: choice
+        options: [staging, production]
+        required: true
+      sha:
+        type: string
+        required: true
+      pipelines:
+        type: string
+        default: '["api-pipeline","proxy-pipeline"]'
+      watch_minutes:
+        type: string
+        default: "15"
+      require_signoff:
+        type: boolean
+        default: false
+
+# A newer deploy to the stage makes this SHA moot: the next stage would promote the newer one.
+concurrency:
+  group: verify-${{ inputs.stage }}
+  cancel-in-progress: true
+
+permissions: {}
+
+env:
+  GITHUB_TOKEN: ${{ github.token }}
+  STAGE: ${{ inputs.stage }}
+  SHA: ${{ inputs.sha }}
+  PIPELINES: ${{ inputs.pipelines }}
+
+jobs:
+  start:
+    runs-on: ubuntu-latest
+    permissions:
+      statuses: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - run: node scripts/deploy/verify.mjs start
+
+  e2e:
+    needs: start
+    if: inputs.stage == 'staging'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      statuses: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - run: node scripts/deploy/verify.mjs e2e
+
+  watch:
+    needs: start
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - run: node scripts/deploy/verify.mjs watch
+        env:
+          WATCH_MINUTES: ${{ inputs.watch_minutes }}
+
+  signoff:
+    needs: start
+    if: inputs.require_signoff && inputs.stage == 'staging'
+    runs-on: ubuntu-latest
+    environment:
+      name: staging-signoff
+      deployment: false
+    steps:
+      - run: echo "QA signed off on staging"
+
+  record:
+    needs: [start, e2e, watch, signoff]
+    if: ${{ !cancelled() && needs.start.result == 'success' }}
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write # the stub page
+      statuses: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - run: node scripts/deploy/verify.mjs record
+        env:
+          E2E: ${{ needs.e2e.result }}
+          WATCH: ${{ needs.watch.result }}
+          SIGNOFF: ${{ needs.signoff.result }}

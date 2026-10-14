@@ -1,0 +1,32 @@
+# Replaces Heroku auto-deploy: development gets a SHA only after CI is green on main,
+# and deployed/development turns green only once both development apps run it.
+name: Deploy development
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+
+concurrency:
+  group: stage-development
+  cancel-in-progress: false
+
+permissions: {}
+
+jobs:
+  deploy:
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # stub Heroku state lives on the stub-heroku branch
+      deployments: write
+      statuses: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - run: node scripts/deploy/deploy-dev.mjs
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          SHA: ${{ github.event.workflow_run.head_sha }}

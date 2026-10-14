@@ -1,0 +1,1 @@
+web: node app/src/server.mjs --asgi
