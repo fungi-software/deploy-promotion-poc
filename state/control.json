@@ -2,6 +2,11 @@
   "fail_build": [],
   "fail_promote": [],
   "e2e_fail": false,
-  "alarms": { "staging": [], "production": [] },
+  "alarms": {
+    "staging": [],
+    "production": [
+      "API 5xx rate"
+    ]
+  },
   "web_dynos": 4
 }
