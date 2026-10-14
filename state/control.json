@@ -6,5 +6,5 @@
     "staging": [],
     "production": []
   },
-  "web_dynos": 2
+  "web_dynos": 4
 }
