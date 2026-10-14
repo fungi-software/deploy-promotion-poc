@@ -1,8 +1,8 @@
 {
   "app": "api-development",
   "sha": "95c42249e2f44fe5c4e926b7d096252a8bca6637",
-  "status": "succeeded",
-  "pending_sha": null,
-  "updated_at": "2026-10-14T19:56:47.519Z",
+  "status": "pending",
+  "pending_sha": "1002a7e6c7fab68ef4dc7d1221c9ded727da843c",
+  "updated_at": "2026-10-14T20:21:22.375Z",
   "release_phase": "migrate, collectstatic"
 }
