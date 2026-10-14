@@ -3,5 +3,5 @@ import { test } from "node:test";
 import { greeting } from "./greeting.mjs";
 
 test("greets by name", () => {
-  assert.equal(greeting("agent"), "Hello, agent");
+  assert.equal(greeting("agent"), "Hello, agent!");
 });
