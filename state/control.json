@@ -4,9 +4,7 @@
   "e2e_fail": false,
   "alarms": {
     "staging": [],
-    "production": [
-      "API 5xx rate"
-    ]
+    "production": []
   },
   "web_dynos": 4
 }
